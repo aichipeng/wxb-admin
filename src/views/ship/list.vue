@@ -280,7 +280,7 @@ export default {
               this.getList();
               this.dialogFormVisible = false;
               this.$notify.success({
-                title: "成功",
+                title: "成功", 
                 message: "操作成功",
               });
             })
