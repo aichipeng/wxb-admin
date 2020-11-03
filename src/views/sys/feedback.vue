@@ -151,7 +151,7 @@ export default {
     handlePics(row) {
       this.visible = true;
       this.currentItem = row.picUrls || [];
-      console.log(row);
+      // console.log(row);
     },
     // 导出用户列表excel
     handleDownload() {

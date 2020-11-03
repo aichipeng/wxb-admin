@@ -26,28 +26,12 @@
         placeholder="请输入用户编号"
       />
       <el-input
-        v-model="listQuery.name"
+        v-model="listQuery.username"
         clearable
         class="filter-item"
         style="width: 150px"
-        placeholder="请输入用户名称"
+        placeholder="请输入用户昵称"
       />
-      <el-select
-        v-model="listQuery.status"
-        class="filter-item"
-        style="width: 150px"
-        clearable
-        placeholder="请选择审核状态"
-        @change="handleFilter"
-      >
-        <el-option :value="undefined" label="全部" />
-        <el-option
-          v-for="(item, index) in stateMap"
-          :key="index"
-          :value="Number(index)"
-          :label="item"
-        />
-      </el-select>
       <el-button
         class="filter-item"
         type="primary"
@@ -75,85 +59,81 @@
       fit
       highlight-current-row
     >
-      <el-table-column align="center" label="编号" prop="id" width="80" />
+      <el-table-column align="center" label="编号" prop="id" min-width="80" />
       <el-table-column
         align="center"
         label="卖家昵称"
         prop="nickName"
-        width="120"
+        min-width="120"
       />
       <el-table-column
         align="center"
         label="用户编号"
         prop="userId"
-        width="80"
+        min-width="80"
       />
       <el-table-column
         align="center"
-        label="提现发起时间"
+        label="手机号"
+        prop="mobile"
+        min-width="120"
+      />
+      <el-table-column
+        align="center"
+        label="导入数据量"
+        prop="total"
+        min-width="100"
+      />
+      <el-table-column
+        align="center"
+        label="导入时间"
         prop="addTime"
-        width="180"
-      />
-      <el-table-column
-        align="center"
-        label="提现金额"
-        prop="cashAmount"
-        width="80"
-      />
-      <el-table-column
-        align="center"
-        label="平台服务费"
-        prop="feeAmount"
-        width="100"
-      />
-      <el-table-column
-        align="center"
-        label="实际支付金额"
-        prop="cashAmount"
-        width="110"
-      >
-        <template slot-scope="scope">
-          {{scope.row.cashAmount - scope.row.feeAmount}}
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="审核状态" prop="state" width="80">
-        <template slot-scope="scope">
-          <el-tag>{{ stateMap[scope.row.state] }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        align="center"
-        label="审核时间"
-        prop="updateTime"
-        width="180"
+        min-width="180"
       />
       <el-table-column align="center" label="操作" width="200">
         <template slot-scope="scope">
-          <!-- <el-button type="primary" size="mini" @click="handleDetail(scope.row)"
-            >详情</el-button
-          > -->
           <el-button
-            v-if="scope.row.state == 2"
-            v-permission="['POST /admin/cash/examine']"
             type="primary"
             size="mini"
-            @click="handleExamine(scope.row)"
-            >审核</el-button
+            @click="handleDetail(scope.row)"
+            v-permission="['POST /admin/data/details']"
+            >详情</el-button
           >
         </template>
       </el-table-column>
     </el-table>
-    <!-- 审核弹窗 -->
-    <el-dialog title="提现审核" :visible.sync="dialogFormVisible">
-      <el-form :model="formData">
-        <el-form-item label="审核备注" label-width="80px">
-          <el-input v-model="formData.remark"></el-input>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="handleClick">通过</el-button>
-        <el-button type="primary" @click="handleClick">驳回</el-button>
-      </div>
+    <!-- 详情弹窗 -->
+    <el-dialog title="详情" :visible.sync="dialogTableVisible" width="80%">
+      <el-table
+        :data="tableList"
+        v-loading="tableListLoading"
+        element-loading-text="正在查询中。。。"
+        border
+        fit
+      >
+        <el-table-column
+          align="center"
+          property="orderNo"
+          label="单号"
+        ></el-table-column>
+        <el-table-column
+          align="center"
+          property="shipSn"
+          label="物流单号"
+        ></el-table-column>
+        <el-table-column
+          align="center"
+          property="freightPrice"
+          label="物流成本"
+        ></el-table-column>
+      </el-table>
+      <pagination
+        v-show="tableTotal > 0"
+        :total="tableTotal"
+        :page.sync="tableQuery.page"
+        :limit.sync="tableQuery.limit"
+        @pagination="getTableList"
+      />
     </el-dialog>
     <pagination
       v-show="total > 0"
@@ -167,16 +147,13 @@
 
 <script>
 import axios from "axios";
-import { cashList, cashExamine } from "@/api/cash";
+import { dataList, dataListDetail } from "@/api/data";
 import Pagination from "@/components/Pagination";
 import { getToken } from "@/utils/auth";
 const stateMap = {
-  0: "处理中",
-  2: "审核中",
-  4: "已通过",
-  5: "放款失败",
-  4: "提现撤回",
-  9: "已驳回",
+  0: "审核中",
+  1: "已通过",
+  2: "已反驳",
 };
 export default {
   name: "Cash",
@@ -194,8 +171,14 @@ export default {
         page: 1,
         limit: 20,
       },
-      dialogFormVisible: false,
-      formData: {},
+      dialogTableVisible: false,
+      tableListLoading: true,
+      tableList: undefined,
+      tableTotal: 0,
+      tableQuery: {
+        page: 1,
+        limit: 20,
+      },
       downloadLoading: false,
     };
   },
@@ -207,7 +190,7 @@ export default {
     // 获取用户列表
     getList() {
       this.listLoading = true;
-      cashList(this.listQuery)
+      dataList(this.listQuery)
         .then((response) => {
           this.list = response.data.data.items;
           this.total = response.data.data.total;
@@ -225,23 +208,33 @@ export default {
       this.listQuery.page = 1;
       this.getList();
     },
-    handleDetail() {},
-    handleExamine(row) {
-      this.dialogFormVisible = true;
+    handleDetail(row) {
       if (row.id) {
-        this.formData.orderNo = row.id;
+        this.tableQuery = {
+          page: 1,
+          limit: 10,
+          totalId: row.id,
+        };
+        this.tableListLoading = true;
+        this.tableList = undefined;
+        this.tableTotal = 0;
+        this.getTableList();
       }
     },
-    handleClick() {
-      console.log(this.formData);
-      cashExamine(this.formData).then((res) => {
-        this.dialogFormVisible = false;
-        this.$notify.success({
-          title: "成功",
-          message: "审核成功",
+    getTableList() {
+      const { tableQuery } = this;
+      dataListDetail(tableQuery)
+        .then((response) => {
+          this.dialogTableVisible = true;
+          this.tableList = response.data.data.items;
+          this.tableTotal = response.data.data.total;
+          this.tableListLoading = false;
+        })
+        .catch(() => {
+          this.tableList = [];
+          this.tableTotal = 0;
+          this.tableListLoading = false;
         });
-        this.getList();
-      });
     },
     // 导出列表excel
     handleDownload() {
@@ -249,21 +242,21 @@ export default {
       import("@/vendor/Export2Excel").then((excel) => {
         const tHeader = [
           "编号",
+          "卖家昵称",
           "用户编号",
-          "提现金额",
-          "创建时间",
-          "更新时间",
-          "提现状态",
+          "手机号",
+          "导入数据量",
+          "导入时间",
         ];
         const filterVal = [
           "id",
+          "nickName",
           "userId",
-          "cashAmount",
+          "mobile",
+          "total",
           "addTime",
-          "updateTime",
-          "state",
         ];
-        excel.export_json_to_excel2(tHeader, this.list, filterVal, "提现记录");
+        excel.export_json_to_excel2(tHeader, this.list, filterVal, "导入记录");
         this.downloadLoading = false;
       });
     },

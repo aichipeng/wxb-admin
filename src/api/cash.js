@@ -10,9 +10,9 @@ export function cashList(query) {
 }
 
 // 结算审核 state  1通过  9驳回
-export function cashReview(data) {
+export function cashExamine(data) {
   return request({
-    url: '/cash/review',
+    url: '/cash/examine',
     method: 'post',
     data
   })

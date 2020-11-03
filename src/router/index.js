@@ -65,26 +65,49 @@ export const asyncRouterMap = [
     alwaysShow: true,
     name: 'user',
     meta: {
-      title: '用户管理',
+      title: '客户管理',
       icon: 'user'
+    },
+    children: [
+      {
+        path: 'listClient',
+        component: () => import('@/views/user/listClient'),
+        name: 'listClient',
+        meta: {
+          perms: ['GET /admin/user/list'],
+          title: '买家管理',
+          noCache: true
+        }
+      },
+      {
+        path: 'listServer',
+        component: () => import('@/views/user/listServer'),
+        name: 'listServer',
+        meta: {
+          perms: ['GET /admin/seller/list'],
+          title: '卖家管理',
+          noCache: true
+        }
+      },
+
+    ]
+  }, {
+    path: '/order',
+    component: Layout,
+    redirect: 'noredirect',
+    alwaysShow: true,
+    name: 'orderManage',
+    meta: {
+      title: '订单管理',
+      icon: 'list'
     },
     children: [{
       path: 'list',
-      component: () => import('@/views/user/list'),
+      component: () => import('@/views/order/list'),
       name: 'list',
       meta: {
-        perms: ['GET /admin/seller/list'],
-        title: '用户列表',
-        noCache: true
-      }
-    },
-    {
-      path: 'feedback',
-      component: () => import('@/views/user/feedback'),
-      name: 'feedback',
-      meta: {
-        perms: ['GET /admin/feedback/list'],
-        title: '意见反馈',
+        perms: ['GET /admin/order/list'],
+        title: '订单查询管理',
         noCache: true
       }
     },]
@@ -104,27 +127,7 @@ export const asyncRouterMap = [
       name: 'list',
       meta: {
         perms: ['GET /admin/activity/list'],
-        title: '活动列表',
-        noCache: true
-      }
-    },]
-  }, {
-    path: '/order',
-    component: Layout,
-    redirect: 'noredirect',
-    alwaysShow: true,
-    name: 'orderManage',
-    meta: {
-      title: '订单管理',
-      icon: 'list'
-    },
-    children: [{
-      path: 'list',
-      component: () => import('@/views/order/list'),
-      name: 'list',
-      meta: {
-        perms: ['GET /admin/order/list'],
-        title: '订单列表',
+        title: '收款活动管理',
         noCache: true
       }
     },]
@@ -135,7 +138,7 @@ export const asyncRouterMap = [
     alwaysShow: true,
     name: 'platformManage',
     meta: {
-      title: '提现管理',
+      title: '结算管理',
       icon: 'edit'
     },
     children: [{
@@ -144,51 +147,72 @@ export const asyncRouterMap = [
       name: 'list',
       meta: {
         perms: ['GET /admin/cash/list'],
-        title: '提现列表',
+        title: '提现申请审核',
         noCache: true
       }
-    },
-    {
-      path: 'config',
-      component: () => import('@/views/cash/config'),
-      name: 'config',
-      meta: {
-        perms: ['GET /admin/config/fee'],
-        title: '提现配置',
-        noCache: true
-      }
-    },
-      // {
-      //   path: 'set',
-      //   component: () => import('@/views/platform/set'),
-      //   name: 'set',
-      //   meta: {
-      //     perms: ['GET /admin/config/wx', 'POST /admin/config/wx'],
-      //     title: '客服设置',
-      //     noCache: true
-      //   }
-      // },
-    ]
+    }]
   }, {
-    path: '/ship',
+    path: '/data',
     component: Layout,
     redirect: 'noredirect',
     alwaysShow: true,
-    name: 'shipManage',
+    name: 'dataManage',
     meta: {
-      title: '物流管理',
-      icon: 'excel'
+      title: '数据查询',
+      icon: 'table'
     },
     children: [{
-      path: 'list',
-      component: () => import('@/views/ship/list'),
-      name: 'list',
+      path: 'export',
+      component: () => import('@/views/data/export'),
+      name: 'export',
       meta: {
-        perms: ['GET /admin/ship/list'],
-        title: '物流列表',
+        perms: ['GET /admin/data/list'],
+        title: '导入数据查询',
         noCache: true
       }
-    },]
+    }]
+  }, {
+    path: '/config',
+    component: Layout,
+    redirect: 'noredirect',
+    alwaysShow: true,
+    name: 'configManage',
+    meta: {
+      title: '参数设置',
+      icon: 'excel'
+    },
+    children: [
+      {
+        path: 'cash',
+        component: () => import('@/views/config/cash'),
+        name: 'cash',
+        meta: {
+          perms: ['GET /admin/config/fee'],
+          title: '提现服务费设置',
+          noCache: true
+        }
+      },
+      {
+        path: 'ship',
+        component: () => import('@/views/config/ship'),
+        name: 'ship',
+        meta: {
+          perms: ['GET /admin/ship/list'],
+          title: '物流设置',
+          noCache: true
+        }
+      },
+      {
+        path: 'close',
+        component: () => import('@/views/config/close'),
+        name: 'close',
+        meta: {
+          perms: ['GET /admin/close/list'],
+          title: '关闭原因维护',
+          noCache: true
+        }
+      },
+    ]
   }, {
     path: '/sys',
     component: Layout,
@@ -212,16 +236,6 @@ export const asyncRouterMap = [
       }
     },
     {
-      path: 'log',
-      component: () => import('@/views/sys/log'),
-      name: 'log',
-      meta: {
-        perms: ['GET /admin/log/list'],
-        title: '操作日志',
-        noCache: true
-      }
-    },
-    {
       path: 'role',
       component: () => import('@/views/sys/role'),
       name: 'role',
@@ -234,15 +248,35 @@ export const asyncRouterMap = [
       }
     },
     {
-      path: 'os',
-      component: () => import('@/views/sys/os'),
-      name: 'os',
+      path: 'feedback',
+      component: () => import('@/views/sys/feedback'),
+      name: 'feedback',
       meta: {
-        perms: ['POST /admin/storage/update', 'POST /admin/storage/read', 'POST /admin/storage/delete', 'POST /admin/storage/create', 'GET /admin/storage/list'],
-        title: '对象存储',
+        perms: ['GET /admin/feedback/list'],
+        title: '意见反馈',
         noCache: true
       }
-    }
+    },
+      // {
+      //   path: 'log',
+      //   component: () => import('@/views/sys/log'),
+      //   name: 'log',
+      //   meta: {
+      //     perms: ['GET /admin/log/list'],
+      //     title: '操作日志',
+      //     noCache: true
+      //   }
+      // },
+      // {
+      //   path: 'os',
+      //   component: () => import('@/views/sys/os'),
+      //   name: 'os',
+      //   meta: {
+      //     perms: ['POST /admin/storage/update', 'POST /admin/storage/read', 'POST /admin/storage/delete', 'POST /admin/storage/create', 'GET /admin/storage/list'],
+      //     title: '对象存储',
+      //     noCache: true
+      //   }
+      // }
     ]
   },
   {

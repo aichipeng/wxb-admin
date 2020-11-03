@@ -51,26 +51,24 @@
       fit
       highlight-current-row
     >
-      <el-table-column align="center" label="物流标识" prop="code" />
-      <el-table-column align="center" label="物流名称" prop="name" />
-      <el-table-column align="center" label="物流图标" prop="logo" width="120">
+      <el-table-column align="center" label="编号" prop="id" />
+      <el-table-column align="center" label="关闭原因" prop="name" />
+
+      <el-table-column align="center" label="创建时间" prop="addTime" />
+      <el-table-column align="center" label="状态" prop="status" width="100">
         <template slot-scope="scope">
-          <img :src="scope.row.logo" alt="图片失效" style="width: 90px" />
+          <el-tag>{{ scope.row.status ? "启用" : "禁用" }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="状态">
+      <el-table-column align="center" label="操作" width="230">
         <template slot-scope="scope">
-          <el-tag>{{ scope.row.status }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        align="center"
-        label="创建时间"
-        prop="addTime"
-        min-width="180"
-      />
-      <el-table-column align="center" label="操作" width="200">
-        <template slot-scope="scope">
+          <el-button
+            v-permission="['POST /admin/ship/update']"
+            type="primary"
+            size="mini"
+            @click="handleDisabled(scope.row)"
+            >{{ scope.row.status == 1 ? "禁用" : "启用" }}</el-button
+          >
           <el-button
             v-permission="['POST /admin/ship/update']"
             type="primary"
@@ -110,24 +108,14 @@
         label-width="100px"
         style="margin-left: 50px"
       >
-        <el-form-item label="物流编码" prop="name">
-          <el-input v-model="dataForm.code" />
-        </el-form-item>
-        <el-form-item label="物流标题" prop="name">
+        <el-form-item label="关闭原因" prop="name">
           <el-input v-model="dataForm.name" />
         </el-form-item>
-        <el-form-item label="物流图标" prop="logo">
-          <el-upload
-            :headers="headers"
-            :action="uploadPath"
-            :show-file-list="false"
-            :on-success="uploadUrl"
-            class="avatar-uploader"
-            accept=".jpg, .jpeg, .png, .gif"
-          >
-            <img v-if="dataForm.logo" :src="dataForm.logo" class="avatar" />
-            <i v-else class="el-icon-plus avatar-uploader-icon" />
-          </el-upload>
+        <el-form-item label="状态" prop="logo">
+          <el-select v-model="dataForm.status" placeholder="状态">
+            <el-option :value="true" label="启用" />
+            <el-option :value="false" label="禁用" />
+          </el-select>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -164,7 +152,7 @@
 </style>
 <script>
 import axios from "axios";
-import { shipList, shipCreate, shipUpdate } from "@/api/ship";
+import { closeList, closeCreate, closeUpdate } from "@/api/order";
 import Pagination from "@/components/Pagination";
 import { getToken } from "@/utils/auth";
 import { uploadPath } from "@/api/storage";
@@ -188,20 +176,12 @@ export default {
       dialogFormVisible: false,
       dataForm: {
         id: undefined,
-        code: undefined,
         name: undefined,
-        logo: undefined,
-        status: 1,
+        status: true,
       },
       rules: {
-        code: [
-          { required: true, message: "物流编码不能为空", trigger: "blur" },
-        ],
         name: [
           { required: true, message: "物流名称不能为空", trigger: "blur" },
-        ],
-        logo: [
-          { required: true, message: "物流图标不能为空", trigger: "blur" },
         ],
       },
     };
@@ -218,10 +198,10 @@ export default {
     this.getList();
   },
   methods: {
-    // 获取用户列表
+    // 获取列表
     getList() {
       this.listLoading = true;
-      shipList(this.listQuery)
+      closeList(this.listQuery)
         .then((response) => {
           this.list = response.data.data.items;
           this.total = response.data.data.total;
@@ -243,10 +223,8 @@ export default {
     resetForm() {
       this.dataForm = {
         id: undefined,
-        code: undefined,
         name: undefined,
-        logo: undefined,
-        status: 1,
+        status: true,
       };
     },
 
@@ -260,6 +238,24 @@ export default {
       this.dataForm = row;
       this.dialogFormVisible = true;
     },
+
+    handleDisabled(row) {
+      row.status = !row.status
+      closeUpdate(row)
+        .then((res) => {
+          this.$notify.success({
+            title: "成功",
+            message: "操作成功",
+          });
+        })
+        .catch((response) => {
+          row.status = !row.status
+          this.$notify.error({
+            title: "失败",
+            message: response.data.errmsg,
+          });
+        });
+    },
     handleDelete() {},
     // 上传图片
     uploadUrl: function (response) {
@@ -271,16 +267,16 @@ export default {
         if (valid) {
           let api = null;
           if (id) {
-            api = shipUpdate;
+            api = closeUpdate;
           } else {
-            api = shipCreate;
+            api = closeCreate;
           }
           api(this.dataForm)
             .then((response) => {
               this.getList();
               this.dialogFormVisible = false;
               this.$notify.success({
-                title: "成功", 
+                title: "成功",
                 message: "操作成功",
               });
             })

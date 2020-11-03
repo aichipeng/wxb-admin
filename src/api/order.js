@@ -11,19 +11,38 @@ export function listOrder(query) {
     }
   })
 }
-// 订单详情
-// export function detailOrder(id) {
-//   return request({
-//     url: '/order/detail',
-//     method: 'get',
-//     params: { id }
-//   })
-// }
-// 修改订单
-// export function remarkOrder(data) {
-//   return request({
-//     url: '/order/remark',
-//     method: 'post',
-//     data
-//   })
-// }
+
+export function orderExport(query) {
+  return request({
+    url: '/order/excel',
+    method: 'get',
+    params: query
+  })
+}
+
+// 订单关闭原因列表
+export function closeList(query) {
+  return request({
+    url: '/close/list',
+    method: 'get',
+    params: query
+  })
+}
+
+// 订单关闭原因添加
+export function closeCreate(query) {
+  return request({
+    url: '/close/add',
+    method: 'get',
+    params: query
+  })
+}
+
+// 订单关闭原因修改
+export function closeUpdate(query) {
+  return request({
+    url: '/close/update',
+    method: 'get',
+    params: query
+  })
+}
